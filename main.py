@@ -136,9 +136,9 @@ def sanitize(content):
 
     for idx in range(len(content)):
         if content[idx] in var_name_arr:
-            content[idx] = 'vari'
+            content[idx] = 'V'
         elif content[idx] in func_name_arr:
-            content[idx] = 'func'
+            content[idx] = 'F'
     print("sanitize", content)
     return content
 
@@ -226,7 +226,7 @@ def _token(content):
     # print(tokened_context)
     return tokened_context
 
-def make(content, kgram = 4, window_size = 4):
+def make(content, kgram = 4, window_size = 25):
     """
     tokenize the content of cpp code
 
@@ -241,60 +241,162 @@ def make(content, kgram = 4, window_size = 4):
     # tokenize
     tokArr = _token(content)
     sanitized_tok_arr = sanitize(tokArr)
-    local_minimum = winnowing(sanitized_tok_arr)
+    local_minimum = winnowing(sanitized_tok_arr, kgram, window_size)
     return local_minimum
 
 
 def main():
+    kgram = 4
+    window_size = 25
     code1 = """
-  int main() {
-    int T, l, * m, i = 0, N, * k, n;
-    k = new int[0];
-    m = new int[0];
-
-    scanf("%d", & T);
-    for (i = 0; i < T; i++) scanf("%d%d", & k[i], & m[i]);
-
-	while (i<T) {
-      l = k[i] - 1;
-      if (l >= 2) n = (ceil(l / 3 + 1) * 3) + l % 3;
-      else n = k[i];
-      N = n * n - 1;
-      printf("%d\n", N % m[i]);
-      i++;
-    }
-
-    return 0;
-  }
+#include<cstdio>
+#include<cstring>
+#include<algorithm>
+using namespace std;
+const int maxn=200010;
+int n,q,p[maxn],cur,mid,l,r,fail[maxn],a[maxn],b[maxn],ans,nww;
+char s[maxn],t[maxn],rev[maxn];
+int main()
+{
+	scanf("%s",s+1);n=strlen(s+1);
+	t[0]='@';for(int i=1;i<=n;i++)t[i]=s[i],b[i]=n+1;t[n+1]='#';
+	q=n+1;mid=r=1;
+	for(int i=1;i<=q;i++)
+	{
+		if(i<=r)p[i]=min(p[mid+mid-i],r-i+1);
+		while(t[i-p[i]]==t[i+p[i]])p[i]++;
+		if(i+p[i]-1>=r)r=i+p[i]-1,mid=i;
+	}
+	for(int i=1;i<=n;i++)rev[i]=s[n-i+1];
+	for(int i=2,j=0;i<=n;i++)
+	{
+		while(j&&rev[i]!=rev[j+1])j=fail[j];
+		if(rev[i]==rev[j+1])j++;
+		fail[i]=j;
+	}
+	for(int i=1,j=0;i<=n;i++)
+	{
+		while(j&&s[i]!=rev[j+1])j=fail[j];
+		if(s[i]==rev[j+1])j++;
+		a[i]=j;if(b[j]==n+1)b[j]=i;
+	}
+	/*
+	printf("%s\n",rev+1);
+	for(int i=1;i<=n;i++)printf("%d ",fail[i]);printf("\n");
+	for(int i=1;i<=n;i++)printf("%d ",a[i]);printf("\n");
+	for(int i=1;i<=n;i++)printf("%d ",b[i]);printf("\n");
+	*/
+	for(int i=1;i<=n;i++)
+	{
+		l=0;r=n+1;
+		while(l+1<r)
+		{
+			int mid=(l+r)>>1;
+			if(i-p[i]+1>b[mid]&&i+p[i]-1<n-mid+1)l=mid;
+			else r=mid;
+		}
+		ans=max(ans,2*p[i]-1+2*l);
+	}
+	//printf("%d\n",ans);
+	for(int i=1;i<=n;i++)
+	{
+		l=0;r=n+1;
+		while(l+1<r)
+		{
+			int mid=(l+r)>>1;
+			if(i-p[i]+1>b[mid]&&i+p[i]-1<n-mid+1)l=mid;
+			else r=mid;
+		}
+		if(ans==2*p[i]-1+2*l)
+		{
+			if(l==0)printf("1\n%d %d\n",i-p[i]+1,2*p[i]-1);
+			else printf("3\n%d %d\n%d %d\n%d %d\n",b[l]-l+1,l,i-p[i]+1,2*p[i]-1,n-l+1,l);
+			return 0;
+		}
+	}
+	return 0;
+}
     """
-    fingerprint_list_1 = make(code1)
+    fingerprint_list_1 = make(code1, kgram, window_size)
 
     print()
 
     code2 = """
- int main() {
-    int T, * k, n, N, * m, i, l;
-    k = new int[0];
-    m = new int[0];
-
-    scanf("%d", & T);
-    for (i = 0; i < T; i++) scanf("%d%d", & k[i], & m[i]);
-
-    for (i = 0; i < T; i++) {
-      l = k[i] - 1;
-      if (l >= 2) n = (ceil(l / 3 + 1) * 3) + l % 3;
-      else n = k[i];
-      N = n * n - 1;
-      printf("%d\n", N % m[i]);
-    }
-
-    return 0;
-  }
+#include<cstring>
+#include<algorithm>
+#include<cstdio>
+using namespace std;
+int n,q,p[maxn],cur,mid,l,r,fail[maxn],a[maxn],b[maxn],ans,nww;
+const int maxn=200010;
+char s[maxn],t[maxn],rev[maxn];
+int main()
+{
+	scanf("%s",s+1);n=strlen(s+1);
+	q=n+1;mid=r=1;
+	t[0]='@';for(int i=1;i<=n;i++)t[i]=s[i],b[i]=n+1;t[n+1]='#';
+	for(int i=1;i<=q;i++)
+	{
+		while(t[i-p[i]]==t[i+p[i]])p[i]++;
+		if(i<=r)p[i]=min(p[mid+mid-i],r-i+1);
+		if(i+p[i]-1>=r)r=i+p[i]-1,mid=i;
+	}
+	for(int i=1;i<=n;i++)rev[i]=s[n-i+1];
+	for(int i=2,j=0;i<=n;i++)
+	{
+		while(j&&rev[i]!=rev[j+1])j=fail[j];
+		if(rev[i]==rev[j+1])j++;
+		fail[i]=j;
+	}
+	for(int i=1,j=0;i<=n;i++)
+	{
+		while(j&&s[i]!=rev[j+1])j=fail[j];
+		if(s[i]==rev[j+1])j++;
+		a[i]=j;if(b[j]==n+1)b[j]=i;
+	}
+	/*
+	printf("%s\n",rev+1);
+	for(int i=1;i<=n;i++)printf("%d ",fail[i]);printf("\n");
+	for(int i=1;i<=n;i++)printf("%d ",a[i]);printf("\n");
+	for(int i=1;i<=n;i++)printf("%d ",b[i]);printf("\n");
+	*/
+	for(int i=1;i<=n;i++)
+	{
+		l=0;r=n+1;
+		while(l+1<r)
+		{
+			int mid=(l+r)>>1;
+			if(i-p[i]+1>b[mid]&&i+p[i]-1<n-mid+1)l=mid;
+			else r=mid;
+		}
+		ans=max(ans,2*p[i]-1+2*l);
+	}
+	//printf("%d\n",ans);
+	for(int i=1;i<=n;i++)
+	{
+		l=0;r=n+1;
+		while(l+1<r)
+		{
+			int mid=(l+r)>>1;
+			if(i-p[i]+1>b[mid]&&i+p[i]-1<n-mid+1)l=mid;
+			else r=mid;
+		}
+		if(ans==2*p[i]-1+2*l)
+		{
+			if(l==0)printf("1\n%d %d\n",i-p[i]+1,2*p[i]-1);
+			else printf("3\n%d %d\n%d %d\n%d %d\n",b[l]-l+1,l,i-p[i]+1,2*p[i]-1,n-l+1,l);
+			return 0;
+		}
+	}
+	return 0;
+}
     """
-    fingerprint_list_2 = make(code2)
+    fingerprint_list_2 = make(code2, kgram, window_size)
 
     # check the fingerprint occurence
-    SM = SequenceMatcher(None, ''.join([str(i) for i in sorted(fingerprint_list_1)]), ''.join([str(i) for i in sorted(fingerprint_list_2)]))
+    SM = SequenceMatcher(None, ''.join([str(i) for i in sorted(fingerprint_list_1)]),\
+                         ''.join([str(i) for i in sorted(fingerprint_list_2)]))
+    print(''.join([str(i) for i in sorted(fingerprint_list_1)]))
+    print(''.join([str(i) for i in sorted(fingerprint_list_2)]))
     print("simular ratio", SM.ratio())
 
 if __name__ == "__main__":
