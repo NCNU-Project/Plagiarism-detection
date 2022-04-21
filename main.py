@@ -3,8 +3,14 @@ import re
 import hashlib
 from difflib import SequenceMatcher
 
-# a generator to generate all pair of k gram
 def kgrams(content, k=4):
+    """
+    a generator to generate all pair of k-element array of content
+
+    :param content: the list we want to return k-element list
+    :param k: the k-element we want to return
+    :return: return the k-element list
+    """
     n = len(content)
 
     if(n < k):
@@ -15,6 +21,13 @@ def kgrams(content, k=4):
             yield content[i : i + k]
 
 def winnowing_hash(content):
+    """
+    hash the content with sha1, and return the hash last 24bits of hash(transform to int)
+
+    :param content: the string we want to hash
+    :return: last 24bits of hash(transform to int)
+    """
+
     hashed_content = hashlib.sha1(content.encode('utf-8'))
 
     # only take last 4 bits to comapre minimal when doing winnowing process
@@ -22,8 +35,14 @@ def winnowing_hash(content):
     # print(content, hashed_content)
     return int(hashed_content, 16)
 
-# return the minimal value's index in input array
 def min_index(arr):
+    """
+    return the minimal value's index in input array
+
+    :param arr: the array we want to find minimal value
+    :return: the index of the minimal in the input array
+    """
+
     min_idx = 0
     min_val = arr[0]
 
@@ -34,6 +53,15 @@ def min_index(arr):
     return min_idx
 
 def winnowing(content, k=4, window_size=4):
+    """
+    find the minimal hash of each window, and return the input content's fingerprint
+
+    :param content: the list we want to apply winnowing algorithm
+    :param k: use k-gram
+    :param window_size: the window size
+    :return: the fingerprint's list we find
+    """
+
     # generate k-element content's list
     contents = kgrams(content,k)
     hashes = list(map(lambda x: winnowing_hash(''.join(x)), contents))
@@ -61,7 +89,14 @@ def winnowing(content, k=4, window_size=4):
         print(cache[fp])
     return fingerprint_list
 
-def sanitize(content, k):
+def sanitize(content):
+    """
+    find the minimal hash of each window, and return the input content's fingerprint
+
+    :param content: the list we want to sanitize with c++'s grammer
+    :return: the sanitized list
+    """
+
     datatypes = "ATOM BOOL BOOLEAN BYTE CHAR COLORREF DWORD DWORDLONG DWORD_PTR \
     DWORD32 DWORD64 FLOAT HACCEL HALF_PTR HANDLE HBITMAP HBRUSH \
     HCOLORSPACE HCONV HCONVLIST HCURSOR HDC HDDEDATA HDESK HDROP HDWP \
@@ -90,7 +125,8 @@ def sanitize(content, k):
 
     var_name_arr = []
     func_name_arr = []
-    for idx in range(len(content) - k):
+    pair_cnt = 4
+    for idx in range(len(content) - pair_cnt):
         if re.match(match_type_pattern, content[idx]) is not None:
             # it will be function or variable
             if content[idx + 2] == '=':
@@ -107,6 +143,13 @@ def sanitize(content, k):
     return content
 
 def _token(content):
+    """
+    tokenize the content of cpp code
+
+    :param content: the list we want to token with cpp
+    :return: the token list
+    """
+
     datatypes = "ATOM BOOL BOOLEAN BYTE CHAR COLORREF DWORD DWORDLONG DWORD_PTR \
     DWORD32 DWORD64 FLOAT HACCEL HALF_PTR HANDLE HBITMAP HBRUSH \
     HCOLORSPACE HCONV HCONVLIST HCURSOR HDC HDDEDATA HDESK HDROP HDWP \
@@ -183,16 +226,21 @@ def _token(content):
     # print(tokened_context)
     return tokened_context
 
-
-# content: the C code
-# kgram: use n-gram
-# window_size: set window size
 def make(content, kgram = 4, window_size = 4):
+    """
+    tokenize the content of cpp code
+
+    :param content: the Cpp code
+    :param k: use k-gram
+    :param window_size: the window size
+    :return: the fingerprint list
+    """
+
     content = re.sub(r'\n|\s+', ' ', content)
     # print("clean space and newline", content)
     # tokenize
     tokArr = _token(content)
-    sanitized_tok_arr = sanitize(tokArr, k = kgram)
+    sanitized_tok_arr = sanitize(tokArr)
     local_minimum = winnowing(sanitized_tok_arr)
     return local_minimum
 
