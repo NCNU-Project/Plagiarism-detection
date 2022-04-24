@@ -136,10 +136,10 @@ def sanitize(content):
 
     for idx in range(len(content)):
         if content[idx] in var_name_arr:
-            content[idx] = 'vari'
+            content[idx] = 'V'
         elif content[idx] in func_name_arr:
-            content[idx] = 'func'
-    ## print("sanitize", content)
+            content[idx] = 'F'
+    #print("sanitize", content)
     return content
 
 def _token(content):
@@ -226,7 +226,7 @@ def _token(content):
     # print(tokened_context)
     return tokened_context
 
-def make(content, kgram = 4, window_size = 4):
+def make(content, kgram = 4, window_size = 25):
     """
     tokenize the content of cpp code
 
@@ -241,12 +241,15 @@ def make(content, kgram = 4, window_size = 4):
     # tokenize
     tokArr = _token(content)
     sanitized_tok_arr = sanitize(tokArr)
-    local_minimum = winnowing(sanitized_tok_arr)
+    local_minimum = winnowing(sanitized_tok_arr, kgram, window_size)
     return local_minimum
 
 
 def main():
+<<<<<<< HEAD
     submit = "id,ids_with_similarity>=80%\n"
+    kgram = 4
+    window_size = 25
     for i in range(1000):
         c = open("data/" + str(i) + ".cpp", "r", encoding="utf-8")
         code1 = c.read()
