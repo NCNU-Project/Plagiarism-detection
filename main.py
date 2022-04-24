@@ -266,7 +266,6 @@ def main():
         #print("code 1:")
         #print(code1)
         #print("--------------------------")
-        c.close()
         submit += str(i) + ","
         for j in range(1000):
             # check the fingerprint occurence
