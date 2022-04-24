@@ -1,7 +1,11 @@
 #!/bin/env python3
 import re
 import hashlib
-from difflib import SequenceMatcher
+# from difflib import SequenceMatcher
+import threading
+import os
+from cdifflib import CSequenceMatcher
+SequenceMatcher = CSequenceMatcher
 
 def kgrams(content, k=4):
     """
@@ -244,40 +248,63 @@ def make(content, kgram = 4, window_size = 25):
     local_minimum = winnowing(sanitized_tok_arr, kgram, window_size)
     return local_minimum
 
+def get_width_height():
+    return os.get_terminal_size(0)
 
 def main():
-    submit = "id,ids_with_similarity>=80%\n"
+    submit_str = "id,ids_with_similarity>=80%\n"
     kgram = 4
-    window_size = 25
+    window_size = 10
+    total_input_cnt = 1000
+    # total_input_cnt = 10
+    worker_cnt = 10
 
     fingerprint_lists = []
 
-    for i in range(1000):
+    for i in range(total_input_cnt):
         c = open("data/" + str(i) + ".cpp", "r", encoding="utf-8")
         code1 = c.read()
         c.close()
-        fingerprint_list_code1 = make(code1)
+        fingerprint_list_code1 = make(code1, kgram, window_size)
         fingerprint_lists.append(''.join([str(i) for i in sorted(fingerprint_list_code1)]))
         if i % 10 == 0:
-            print("load {}/{}".format(i, 1000))
+            print("\rload {}/{}".format(i, 1000), end="")
+    print("\rload {}/{}".format(1000, 1000))
+
+    submit = ["" for i in range(total_input_cnt)]
+
+    def job(i_range, process_range):
+        submit_ans = ""
+        for i in range(i_range, i_range + process_range):
+            #print("code 1:")
+            #print(code1)
+            #print("--------------------------")
+            submit_ans += ","
+            for j in range(total_input_cnt):
+                # check the fingerprint occurence
+                SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+                #print("{}: {} simular ratio".format(i, j), SM.ratio())
+                if SM.ratio() >= 0.8:
+                    submit_ans += str(j) + "; "
+            # if i % 10 == 0:
+            #     print("\rprocess {}/{}".format(i, 1000), sep="", end="")
+            submit_ans += "\n"
+            submit[i] = submit_ans
+        print("done")
+        # print("\rprocess {}/{}".format(i, 1000), sep="", end="")
+
+    threads = []
+    for i in range(worker_cnt):
+      threads.append(threading.Thread(target = job, args = (total_input_cnt//worker_cnt * i, total_input_cnt // worker_cnt)))
+      threads[i].start()
 
 
-    for i in range(1000):
-        #print("code 1:")
-        #print(code1)
-        #print("--------------------------")
-        c.close()
-        submit += str(i) + ","
-        for j in range(1000):
-            # check the fingerprint occurence
-            SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
-            #print("{}: {} simular ratio".format(i, j), SM.ratio())
-            if SM.ratio() >= 0.8:
-                submit += str(j) + "; "
-        if i % 10 == 0:
-            print(i)
-        submit += "\n"
-    open("submit.csv", "w").write(submit)
+    for i in range(worker_cnt):
+        print("\rprocess {}/{}".format(i, worker_cnt), sep="", end="")
+        threads[i].join()
+
+    print(submit)
+    # open("submit.csv", "w").write(submit)
 
 if __name__ == "__main__":
     main()
