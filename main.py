@@ -246,29 +246,31 @@ def make(content, kgram = 4, window_size = 25):
 
 
 def main():
-<<<<<<< HEAD
     submit = "id,ids_with_similarity>=80%\n"
     kgram = 4
     window_size = 25
+
+    fingerprint_lists = []
+
     for i in range(1000):
         c = open("data/" + str(i) + ".cpp", "r", encoding="utf-8")
         code1 = c.read()
+        c.close()
+        fingerprint_list_code1 = make(code1)
+        fingerprint_lists.append(''.join([str(i) for i in sorted(fingerprint_list_code1)]))
+        if i % 10 == 0:
+            print("load {}/{}".format(i, 1000))
+
+
+    for i in range(1000):
         #print("code 1:")
         #print(code1)
         #print("--------------------------")
         c.close()
-        fingerprint_list_1 = make(code1)
         submit += str(i) + ","
         for j in range(1000):
-            c = open("data/" + str(j) + ".cpp", "r", encoding="utf-8")
-            code2 = c.read()
-            #print("code 2:")
-            #print(code2)
-            c.close()
-            fingerprint_list_2 = make(code2)
-
             # check the fingerprint occurence
-            SM = SequenceMatcher(None, ''.join([str(i) for i in sorted(fingerprint_list_1)]), ''.join([str(i) for i in sorted(fingerprint_list_2)]))
+            SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
             #print("{}: {} simular ratio".format(i, j), SM.ratio())
             if SM.ratio() >= 0.8:
                 submit += str(j) + "; "
