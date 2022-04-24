@@ -69,7 +69,7 @@ def winnowing(content, k=4, window_size=4):
     # cache the hash
     cache = dict(zip(hashes, map(lambda  x: ' '.join(x),kgrams(content, k))))
 
-    print("cache hashes", cache)
+    ## print("cache hashes", cache)
     # generate window_size-element hashed list
     windows = kgrams(hashes, window_size)
 
@@ -83,10 +83,10 @@ def winnowing(content, k=4, window_size=4):
             prev_min = cur_min
 
     # print the local minimum(fingerprint)
-    print("\nprint the local minimum(fingerprint)")
-    print(fingerprint_list, cache.keys())
-    for fp in fingerprint_list:
-        print(cache[fp])
+    ## print("\nprint the local minimum(fingerprint)")
+    ## print(fingerprint_list, cache.keys())
+    ## for fp in fingerprint_list:
+    ##     print(cache[fp])
     return fingerprint_list
 
 def sanitize(content):
@@ -139,7 +139,7 @@ def sanitize(content):
             content[idx] = 'vari'
         elif content[idx] in func_name_arr:
             content[idx] = 'func'
-    print("sanitize", content)
+    ## print("sanitize", content)
     return content
 
 def _token(content):
@@ -246,56 +246,33 @@ def make(content, kgram = 4, window_size = 4):
 
 
 def main():
-    code1 = """
-  int main() {
-    int T, l, * m, i = 0, N, * k, n;
-    k = new int[0];
-    m = new int[0];
+    submit = "id,ids_with_similarity>=80%\n"
+    for i in range(1000):
+        c = open("data/" + str(i) + ".cpp", "r", encoding="utf-8")
+        code1 = c.read()
+        #print("code 1:")
+        #print(code1)
+        #print("--------------------------")
+        c.close()
+        fingerprint_list_1 = make(code1)
+        submit += str(i) + ","
+        for j in range(1000):
+            c = open("data/" + str(j) + ".cpp", "r", encoding="utf-8")
+            code2 = c.read()
+            #print("code 2:")
+            #print(code2)
+            c.close()
+            fingerprint_list_2 = make(code2)
 
-    scanf("%d", & T);
-    for (i = 0; i < T; i++) scanf("%d%d", & k[i], & m[i]);
-
-	while (i<T) {
-      l = k[i] - 1;
-      if (l >= 2) n = (ceil(l / 3 + 1) * 3) + l % 3;
-      else n = k[i];
-      N = n * n - 1;
-      printf("%d\n", N % m[i]);
-      i++;
-    }
-
-    return 0;
-  }
-    """
-    fingerprint_list_1 = make(code1)
-
-    print()
-
-    code2 = """
- int main() {
-    int T, * k, n, N, * m, i, l;
-    k = new int[0];
-    m = new int[0];
-
-    scanf("%d", & T);
-    for (i = 0; i < T; i++) scanf("%d%d", & k[i], & m[i]);
-
-    for (i = 0; i < T; i++) {
-      l = k[i] - 1;
-      if (l >= 2) n = (ceil(l / 3 + 1) * 3) + l % 3;
-      else n = k[i];
-      N = n * n - 1;
-      printf("%d\n", N % m[i]);
-    }
-
-    return 0;
-  }
-    """
-    fingerprint_list_2 = make(code2)
-
-    # check the fingerprint occurence
-    SM = SequenceMatcher(None, ''.join([str(i) for i in sorted(fingerprint_list_1)]), ''.join([str(i) for i in sorted(fingerprint_list_2)]))
-    print("simular ratio", SM.ratio())
+            # check the fingerprint occurence
+            SM = SequenceMatcher(None, ''.join([str(i) for i in sorted(fingerprint_list_1)]), ''.join([str(i) for i in sorted(fingerprint_list_2)]))
+            #print("{}: {} simular ratio".format(i, j), SM.ratio())
+            if SM.ratio() >= 0.8:
+                submit += str(j) + "; "
+        if i % 10 == 0:
+            print(i)
+        submit += "\n"
+    open("submit.csv", "w").write(submit)
 
 if __name__ == "__main__":
     main()
