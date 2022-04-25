@@ -31,7 +31,7 @@ def winnowing_hash(content):
     hashed_content = hashlib.sha1(content.encode('utf-8'))
 
     # only take last 4 bits to comapre minimal when doing winnowing process
-    hashed_content = hashed_content.hexdigest()[-6]
+    hashed_content = hashed_content.hexdigest()[-10]
     # print(content, hashed_content)
     return int(hashed_content, 16)
 
@@ -125,14 +125,37 @@ def sanitize(content):
 
     var_name_arr = []
     func_name_arr = []
-    pair_cnt = 4
-    for idx in range(len(content) - pair_cnt):
-        if re.match(match_type_pattern, content[idx]) is not None:
-            # it will be function or variable
-            if content[idx + 2] == '=':
-                var_name_arr.append(content[idx + 1])
-            elif content[idx + 1] != 'main':
+
+
+
+    for (idx, value) in enumerate(content):
+        if re.match(match_type_pattern, value) is not None:
+            if content[idx + 2] == '(':
                 func_name_arr.append(content[idx + 1])
+            else:
+                start_idx = idx
+                end_idx = idx + content[idx:].index(';')
+                # print(content[start_idx:], end_idx)
+                while start_idx <= end_idx:
+                    # print(start_idx)
+                    if content[start_idx] == '=':
+                        var_name_arr.append(content[start_idx - 1])
+                        while start_idx < end_idx and (content[start_idx] != ',' or content[start_idx] != ';'):
+                            start_idx += 1
+                    elif content[start_idx] == ',' or content[start_idx] == ';':
+                        var_name_arr.append(content[start_idx - 1])
+
+                    start_idx += 1
+                idx = start_idx
+
+
+    # for idx in range(len(content)):
+    #     if re.match(match_type_pattern, content[idx]) is not None:
+    #         # it will be function or variable
+    #         if content[idx + 2] == '=':
+    #             var_name_arr.append(content[idx + 1])
+    #         elif content[idx + 1] != 'main':
+    #             func_name_arr.append(content[idx + 1])
 
     for idx in range(len(content)):
         if content[idx] in var_name_arr:
@@ -246,38 +269,63 @@ def make(content, kgram = 4, window_size = 25):
 
 
 def main():
-    submit = "id,ids_with_similarity>=80%\n"
     kgram = 4
-    window_size = 25
+    window_size = 10
+    total_test_case = 1000
+    total_test_case = 100
 
     fingerprint_lists = []
 
-    for i in range(1000):
+    for i in range(total_test_case):
         c = open("data/" + str(i) + ".cpp", "r", encoding="utf-8")
         code1 = c.read()
         c.close()
-        fingerprint_list_code1 = make(code1)
+        fingerprint_list_code1 = make(code1, kgram, window_size)
         fingerprint_lists.append(''.join([str(i) for i in sorted(fingerprint_list_code1)]))
         if i % 10 == 0:
-            print("load {}/{}".format(i, 1000))
+            print("\rpre process {}/{}".format(i, total_test_case), end="")
+    print("\rpre process {}/{}".format(total_test_case, total_test_case))
 
-
-    for i in range(1000):
+    # quick glance the data
+    similar_pairs = []
+    for i in range(total_test_case):
         #print("code 1:")
         #print(code1)
         #print("--------------------------")
-        c.close()
-        submit += str(i) + ","
-        for j in range(1000):
+        for j in range(total_test_case):
             # check the fingerprint occurence
             SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
             #print("{}: {} simular ratio".format(i, j), SM.ratio())
-            if SM.ratio() >= 0.8:
-                submit += str(j) + "; "
+            if SM.quick_ratio() >= 0.8:
+                similar_pairs.append((i, j))
         if i % 10 == 0:
-            print(i)
-        submit += "\n"
-    open("submit.csv", "w").write(submit)
+            print("\rfilter data {}/{}".format(i, total_test_case), end="")
+    print("\rfilter data {}/{}".format(total_test_case, total_test_case))
+    # print(similar_pairs)
+
+    submit_dic = {i:"{},".format(i) for i in range(total_test_case)}
+    for (i, j) in similar_pairs:
+        # check the fingerprint occurence
+        SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+        #print("{}: {} simular ratio".format(i, j), SM.ratio())
+        if SM.ratio() >= 0.8:
+            submit_dic[i] += "{}, ".format(j)
+        print("\rprocess {}/{}".format(i, total_test_case),end="")
+    print("\rprocess {}/{}".format(total_test_case, total_test_case))
+    open("submit.csv", "w").write("id,ids_with_similarity>=80%\n" + '\n'.join(submit_dic.values()))
 
 if __name__ == "__main__":
     main()
+#    content = """
+# const int maxn=1e5+10;
+# int n,pos,ans;
+# int d[maxn],nxt[maxn],f[maxn],g[maxn];
+#     """
+# 
+#     content = re.sub(r'\n|\s+', ' ', content)
+#     # print("clean space and newline", content)
+#     # tokenize
+#     tokArr = _token(content)
+#     sanitized_tok_arr = sanitize(tokArr)
+#     print(sanitized_tok_arr)
+#     # local_minimum = winnowing(sanitized_tok_arr, kgram, window_size)
