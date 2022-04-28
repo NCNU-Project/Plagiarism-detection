@@ -264,6 +264,7 @@ def make(content, kgram = 4, window_size = 25):
     # tokenize
     tokArr = _token(content)
     sanitized_tok_arr = sanitize(tokArr)
+    # print(' '.join(sanitized_tok_arr))
     local_minimum = winnowing(sanitized_tok_arr, kgram, window_size)
     return local_minimum
 
@@ -272,7 +273,7 @@ def main():
     kgram = 4
     window_size = 10
     total_test_case = 1000
-    total_test_case = 100
+    # total_test_case = 100
 
     fingerprint_lists = []
 
@@ -281,11 +282,12 @@ def main():
         code1 = c.read()
         c.close()
         fingerprint_list_code1 = make(code1, kgram, window_size)
-        fingerprint_lists.append(''.join([str(i) for i in sorted(fingerprint_list_code1)]))
+        fingerprint_lists.append(','.join([str(i) for i in sorted(fingerprint_list_code1)]))
         if i % 10 == 0:
             print("\rpre process {}/{}".format(i, total_test_case), end="")
     print("\rpre process {}/{}".format(total_test_case, total_test_case))
 
+    # print(fingerprint_lists)
     # quick glance the data
     similar_pairs = []
     for i in range(total_test_case):
@@ -294,9 +296,10 @@ def main():
         #print("--------------------------")
         for j in range(total_test_case):
             # check the fingerprint occurence
-            SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+            SM1 = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+            SM2 = SequenceMatcher(None, fingerprint_lists[j], fingerprint_lists[i])
             #print("{}: {} simular ratio".format(i, j), SM.ratio())
-            if SM.quick_ratio() >= 0.8:
+            if SM1.quick_ratio() >= 0.8 and SM2.quick_ratio() >= 0.8:
                 similar_pairs.append((i, j))
         if i % 10 == 0:
             print("\rfilter data {}/{}".format(i, total_test_case), end="")
@@ -306,9 +309,10 @@ def main():
     submit_dic = {i:"{},".format(i) for i in range(total_test_case)}
     for (i, j) in similar_pairs:
         # check the fingerprint occurence
-        SM = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+        SM1 = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
+        SM2 = SequenceMatcher(None, fingerprint_lists[j], fingerprint_lists[i])
         #print("{}: {} simular ratio".format(i, j), SM.ratio())
-        if SM.ratio() >= 0.8:
+        if SM1.ratio() >= 0.8 and SM2.ratio() >= 0.8:
             submit_dic[i] += "{}, ".format(j)
         print("\rprocess {}/{}".format(i, total_test_case),end="")
     print("\rprocess {}/{}".format(total_test_case, total_test_case))
