@@ -275,6 +275,10 @@ def main():
     total_test_case = 1000
     # total_test_case = 100
 
+    # if strict == True: if we have 2 program, A is 80% likely B, but B is 20% likely A, it will be output to the csv
+    # else             : we need A is 80% likely B and B is 80% likely A, it will be output to the csv
+    strict  = False
+
     fingerprint_lists = []
 
     for i in range(total_test_case):
@@ -299,8 +303,12 @@ def main():
             SM1 = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
             SM2 = SequenceMatcher(None, fingerprint_lists[j], fingerprint_lists[i])
             #print("{}: {} simular ratio".format(i, j), SM.ratio())
-            if SM1.quick_ratio() >= 0.8 and SM2.quick_ratio() >= 0.8:
-                similar_pairs.append((i, j))
+            if SM1.quick_ratio() >= 0.8:
+                if strict:
+                    if SM2.quick_ratio() >= 0.8:
+                        similar_pairs.append((i, j))
+                else:
+                        similar_pairs.append((i, j))
         if i % 10 == 0:
             print("\rfilter data {}/{}".format(i, total_test_case), end="")
     print("\rfilter data {}/{}".format(total_test_case, total_test_case))
@@ -312,8 +320,13 @@ def main():
         SM1 = SequenceMatcher(None, fingerprint_lists[i], fingerprint_lists[j])
         SM2 = SequenceMatcher(None, fingerprint_lists[j], fingerprint_lists[i])
         #print("{}: {} simular ratio".format(i, j), SM.ratio())
-        if SM1.ratio() >= 0.8 and SM2.ratio() >= 0.8:
-            submit_dic[i] += "{}, ".format(j)
+        if SM1.ratio() >= 0.8:
+            if strict:
+                if SM2.ratio() >= 0.8:
+                    submit_dic[i] += "{}, ".format(j)
+            else:
+                submit_dic[i] += "{}, ".format(j)
+
         print("\rprocess {}/{}".format(i, total_test_case),end="")
     print("\rprocess {}/{}".format(total_test_case, total_test_case))
     open("submit.csv", "w").write("id,ids_with_similarity>=80%\n" + '\n'.join(submit_dic.values()))
